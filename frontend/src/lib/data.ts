@@ -28,3 +28,18 @@ export const getRecentlyGamesById = cache(async (userId: number)=> {
     return [];
   }
 })
+
+export const getLeaderboard = cache(async (part: number) => {
+  try {
+    const limit = 20;
+    const offset = (part - 1) * limit;
+    const {rows} = await pool.query<UserStats>(
+      'SELECT * FROM users_info ORDER BY score DESC, wins DESC, user_id ASC OFFSET $1 LIMIT $2',
+      [offset,limit]
+    );
+    return rows;
+  } catch (error) {
+    console.error('Failed to fetch recently games:', error);
+    return [];
+  }
+})
