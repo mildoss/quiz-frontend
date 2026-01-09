@@ -1,6 +1,7 @@
 export interface Game {
-  id: number;
-  game_score: number;
+  game_id: number;
+  score: number;
   status: boolean;
   date: string;
 }
+

@@ -28,9 +28,9 @@ export const RecentGamesTable = ({games}: RecentlyGamesProps) => {
         </thead>
         <tbody>
         {games.map((game) => (
-          <tr key={game.id} className="hover:bg-gray-300 transition-colors ease-in-out duration-300">
-            <td className="w-1/4 px-4 py-2 text-left">{game.id}</td>
-            <td className="w-1/4 px-4 py-2 text-center text-amber-600 font-bold">{game.game_score}</td>
+          <tr key={game.game_id} className="hover:bg-gray-300 transition-colors ease-in-out duration-300">
+            <td className="w-1/4 px-4 py-2 text-left">{game.game_id}</td>
+            <td className="w-1/4 px-4 py-2 text-center text-amber-600 font-bold">{game.score}</td>
             <td className={`w-1/4 px-4 py-2 text-center font-bold ${game.status ? 'text-emerald-600' : 'text-red-600'}`}>{game.status ? 'WIN' : 'LOSE'}</td>
             <td className="w-1/4 px-4 py-2 text-right">{new Date(game.date).toLocaleString()}</td>
           </tr>

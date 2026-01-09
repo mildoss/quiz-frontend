@@ -19,7 +19,12 @@ export const getUserStatsById = cache(async (userId: number) => {
 export const getRecentlyGamesById = cache(async (userId: number)=> {
   try {
     const {rows} = await pool.query<Game>(
-      'SELECT * FROM games WHERE user_info_id = $1 ORDER BY date DESC LIMIT 10',
+      'SELECT gp.game_id, gp.status, gp.score, g.date ' +
+      'FROM games_players gp ' +
+      'JOIN games g ON gp.game_id = g.id ' +
+      'WHERE gp.user_id = $1 ' +
+      'ORDER BY g.date DESC ' +
+      'LIMIT 10',
       [userId]
     );
     return rows;
