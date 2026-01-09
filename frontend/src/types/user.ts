@@ -4,7 +4,7 @@ export interface UserStats {
   user_id: number;
   username: string;
   losses: number;
-  score: number;
+  total_score: number;
   wins: number;
   game_quantity: number;
 }

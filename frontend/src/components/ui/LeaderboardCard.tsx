@@ -47,7 +47,7 @@ export const LeaderboardCard = ({user, rank}: LeaderboardCardProps) => {
         <div className="flex gap-2">
           <div className="flex items-center gap-1">
             <span>⭐</span>
-            <p>{user.score}</p>
+            <p>{user.total_score}</p>
           </div>
           <div className="flex items-center gap-1">
             <span>🏆</span>
