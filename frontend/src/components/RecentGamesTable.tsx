@@ -1,4 +1,5 @@
 import {Game} from "@/types/game";
+import Link from "next/link";
 
 interface RecentlyGamesProps {
   games: Game[] | null;
@@ -28,11 +29,28 @@ export const RecentGamesTable = ({games}: RecentlyGamesProps) => {
         </thead>
         <tbody>
         {games.map((game) => (
-          <tr key={game.game_id} className="hover:bg-gray-300 transition-colors ease-in-out duration-300">
-            <td className="w-1/4 px-4 py-2 text-left">{game.game_id}</td>
-            <td className="w-1/4 px-4 py-2 text-center text-amber-600 font-bold">{game.score}</td>
-            <td className={`w-1/4 px-4 py-2 text-center font-bold ${game.status ? 'text-emerald-600' : 'text-red-600'}`}>{game.status ? 'WIN' : 'LOSE'}</td>
-            <td className="w-1/4 px-4 py-2 text-right">{new Date(game.date).toLocaleString()}</td>
+          <tr
+            key={game.game_id}
+            className="hover:bg-gray-300 transition-colors ease-in-out duration-300 cursor-pointer group"
+          >
+            <td className="w-1/4 px-4 py-2 text-left">
+              <Link href={`/game/${game.game_id}`} className="text-blue-600 hover:underline block w-full">
+                {game.game_id}
+              </Link>
+            </td>
+            <td className="w-1/4 px-4 py-2 text-center text-amber-600 font-bold">
+              <Link href={`/game/${game.game_id}`} className="block w-full">
+                {game.score}
+              </Link>
+            </td>
+            <td className={`w-1/4 px-4 py-2 text-center font-bold ${game.status ? 'text-emerald-600' : 'text-red-600'}`}>
+              <Link href={`/game/${game.game_id}`} className="block w-full">
+                {game.status ? 'WIN' : 'LOSE'}
+              </Link>
+            </td>
+            <td className="w-1/4 px-4 py-2 text-right text-gray-500">
+              {new Date(game.date).toLocaleString()}
+            </td>
           </tr>
         ))}
         </tbody>
