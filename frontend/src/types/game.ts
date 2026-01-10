@@ -5,3 +5,7 @@ export interface Game {
   date: string;
 }
 
+export interface GameInfoResponse extends Game {
+  username: string;
+  user_id: number;
+}

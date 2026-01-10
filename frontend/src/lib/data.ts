@@ -1,7 +1,7 @@
 import pool from '@/lib/db';
 import { cache } from 'react';
 import {UserStats} from "@/types/user";
-import {Game} from "@/types/game";
+import {Game, GameInfoResponse} from "@/types/game";
 
 export const getUserStatsById = cache(async (userId: number) => {
   try {
@@ -45,6 +45,23 @@ export const getLeaderboard = cache(async (part: number) => {
     return rows;
   } catch (error) {
     console.error('Failed to fetch recently games:', error);
+    return [];
+  }
+})
+
+export const getGamesInfo = cache(async (gameId: number) => {
+  try {
+    const { rows } = await pool.query<GameInfoResponse>(
+      `SELECT gp.game_id, gp.user_id, gp.score, gp.status, ui.username, ui.user_id
+        FROM games_players gp
+        JOIN users_info ui ON gp.user_id = ui.user_id
+        WHERE gp.game_id = $1
+        ORDER BY gp.score DESC`,
+      [gameId]
+    );
+    return rows;
+  } catch (error) {
+    console.error('Failed to fetch games:', error);
     return [];
   }
 })
