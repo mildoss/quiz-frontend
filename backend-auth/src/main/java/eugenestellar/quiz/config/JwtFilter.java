@@ -1,6 +1,7 @@
 package eugenestellar.quiz.config;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eugenestellar.quiz.util.JwtUtil;
 import eugenestellar.quiz.service.CustomUserDetailsService;
@@ -10,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -46,7 +48,9 @@ public class JwtFilter extends OncePerRequestFilter {
     if (authHeader != null && authHeader.startsWith("Bearer ") && SecurityContextHolder.getContext().getAuthentication() == null) {
       try {
         String token = authHeader.substring(7);
-        String username = jwtUtil.validateAccessTokenAndRetrieveClaim(token);
+        // log.info(token);
+        DecodedJWT jwt = jwtUtil.validateAccessToken(token);
+        String username = jwt.getSubject();
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
         UsernamePasswordAuthenticationToken authToken =
