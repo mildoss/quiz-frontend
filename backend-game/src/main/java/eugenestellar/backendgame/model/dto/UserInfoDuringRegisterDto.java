@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter @Setter @AllArgsConstructor @NoArgsConstructor
-public class UserInfoAfterRegisterDto {
+public class UserInfoDuringRegisterDto {
 
   @NotBlank(message = "Name can't be empty")
   @Size(max = 20, min = 3, message = "Username length must be between 3 and 20 characters") // code level

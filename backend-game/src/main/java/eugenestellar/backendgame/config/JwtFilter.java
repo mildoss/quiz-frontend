@@ -62,9 +62,16 @@ public class JwtFilter extends OncePerRequestFilter {
             .map(SimpleGrantedAuthority::new) // role -> new SimpleGrantedAuthority(role)
             .toList();
 
+        Object principal;
+        if (tokenType.equals("access")) {
+          principal = new UserPrincipal(jwt.getClaim("userId").asLong(), username);
+        } else {
+          principal = username;
+        }
 
+        // for a service token the Principal is just a username
         Authentication auth = new UsernamePasswordAuthenticationToken(
-            username, null, authorities);
+            principal, null, authorities);
         SecurityContextHolder.getContext().setAuthentication(auth);
       } catch (JWTVerificationException ex) {
         SecurityContextHolder.clearContext();
@@ -73,7 +80,6 @@ public class JwtFilter extends OncePerRequestFilter {
         return;
       }
     }
-    // response.setStatus(400); тут не уверен
     filterChain.doFilter(request, response);
   }
 
