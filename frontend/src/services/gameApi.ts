@@ -9,8 +9,14 @@ export const gameApi = baseApi.injectEndpoints({
         method: 'GET',
       }),
     }),
+    getActiveGame: builder.query<{ status: | 'NOT_IN_GAME' | 'CONNECTED' | 'DISCONNECTED' }, void>({
+      query: () => ({
+        url: '/game/status',
+        method: 'GET',
+      }),
+    }),
   })
 })
 
-export const {useGetGameInfoQuery} = gameApi;
+export const {useGetGameInfoQuery, useGetActiveGameQuery} = gameApi;
 
