@@ -1,4 +1,4 @@
-import { GameRoom, RoomUpdate } from "@/types/game";
+import { RoomUpdate } from "@/types/game";
 import { Countdown } from "@/components/ui/Countdown";
 
 interface GameLobbyProps {
@@ -19,7 +19,7 @@ export const GameLobby = ({ room, onLeave }: GameLobbyProps) => {
       </div>
 
       {gameRoom.countdownEndTime && (
-        <Countdown targetDate={gameRoom.countdownEndTime} />
+        <Countdown targetDate={gameRoom.countdownEndTime} text='The game will start in' currentTime={gameRoom.currentTime}/>
       )}
 
       <div className="space-y-3 mb-8">
