@@ -1,19 +1,19 @@
 "use client"
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
-import { selectToken } from "@/store/authSlice";
-import { selectGameRoom, selectIsSearching } from "@/store/gameSlice";
-import { useGameSocket } from "@/hooks/useGameSocket";
-import { GameLobby } from "@/components/GameLobby";
+import {useEffect} from "react";
+import {useRouter} from "next/navigation";
+import {useSelector} from "react-redux";
+import {selectToken} from "@/store/authSlice";
+import {selectGameRoom, selectIsSearching} from "@/store/gameSlice";
+import {GameLobby} from "@/components/GameLobby";
+import {useGameSocket} from "@/providers/SocketProvider";
 
 export default function Home() {
   const router = useRouter();
   const token = useSelector(selectToken);
   const room = useSelector(selectGameRoom);
   const isSearching = useSelector(selectIsSearching);
-  const { isConnected, findGame, leaveQueue } = useGameSocket();
+  const {isConnected, findGame, leaveQueue} = useGameSocket();
 
   useEffect(() => {
     if (room?.gameRoom?.status === 'ACTIVE') {
@@ -39,7 +39,7 @@ export default function Home() {
       )}
 
       {room && (
-        <GameLobby room={room} onLeave={leaveQueue} />
+        <GameLobby room={room} onLeave={() => leaveQueue(room.gameRoom.id)}/>
       )}
     </div>
   );
