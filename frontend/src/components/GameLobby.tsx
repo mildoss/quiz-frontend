@@ -27,7 +27,7 @@ export const GameLobby = ({ room, onLeave }: GameLobbyProps) => {
           <div key={player.id} className="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
             <span className="font-semibold text-gray-800">{player.username}</span>
             <span className="text-xs font-bold text-green-500 bg-green-50 px-2 py-1 rounded-md">
-              {player.playerStatus}
+              {player.status}
             </span>
           </div>
         ))}

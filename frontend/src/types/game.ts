@@ -10,14 +10,19 @@ export interface GameInfoResponse extends Game {
   user_id: number;
 }
 
-export type GameStatus = 'WAITING' | 'COUNTDOWN' | 'ACTIVE' | 'FINISHED';
+export type GameStatus = 'WAITING' | 'COUNTDOWN' | 'ACTIVE' | 'FINISHED' | 'ROUND_FINISHED';
 
 export interface Player {
   id: number;
   username: string;
-  playerStatus: string;
+  status: string;
   score?: number;
-  inAnswer?: boolean;
+  isAnswered?: boolean;
+}
+
+export interface Answer {
+  id: number;
+  text: string;
 }
 
 export interface GameRoom {
@@ -25,6 +30,14 @@ export interface GameRoom {
   status: GameStatus;
   players: Player[];
   countdownEndTime?: string;
+  currentQText: string;
+  currentAnswers: Answer[];
+  currentQNum: number;
+  qQuantity: number;
+  roundEndTime: string;
+  currentTime: string;
+  currentQId: number;
+  answerId: number;
 }
 
 export interface RoomUpdate {
