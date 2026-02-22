@@ -2,14 +2,16 @@
 
 import {useEffect} from "react";
 import {useRouter} from "next/navigation";
-import {useSelector} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import {selectToken} from "@/store/authSlice";
-import {selectGameRoom, selectIsSearching} from "@/store/gameSlice";
+import {clearGame, selectGameRoom, selectIsSearching, setGameStatus} from "@/store/gameSlice";
 import {GameLobby} from "@/components/GameLobby";
 import {useGameSocket} from "@/providers/SocketProvider";
+import {AppDispatch} from "@/store/store";
 
 export default function Home() {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const token = useSelector(selectToken);
   const room = useSelector(selectGameRoom);
   const isSearching = useSelector(selectIsSearching);
@@ -19,7 +21,12 @@ export default function Home() {
     if (room?.gameRoom?.status === 'ACTIVE') {
       router.push('/game');
     }
-  }, [room, router]);
+
+    if (room?.gameRoom?.status === 'FINISHED') {
+      dispatch(clearGame());
+      dispatch(setGameStatus('NOT_IN_GAME')); // 🔥 Ставим локальный флаг мгновенно!
+    }
+  }, [room, router, dispatch]);
 
   if (!token) return <div className="flex h-screen items-center justify-center">Unauthorized</div>;
 
@@ -31,7 +38,7 @@ export default function Home() {
           <button
             onClick={findGame}
             disabled={!isConnected}
-            className="bg-black text-white px-12 py-5 rounded-full font-bold text-xl hover:bg-gray-800 disabled:bg-gray-400 transition-all active:scale-95 shadow-xl"
+            className="bg-black text-white px-12 py-5 rounded-full font-bold text-xl hover:bg-gray-800 disabled:bg-gray-400 transition-all active:scale-95 shadow-xl cursor-pointer"
           >
             {isConnected ? 'FIND GAME' : 'CONNECTION...'}
           </button>

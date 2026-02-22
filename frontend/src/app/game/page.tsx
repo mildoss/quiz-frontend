@@ -8,6 +8,9 @@ import {selectUserId} from "@/store/authSlice";
 import {Spinner} from "@/components/ui/Spinner";
 import {Countdown} from "@/components/ui/Countdown";
 import {useRouter} from "next/navigation";
+import {RoundResults} from "@/components/RoundResults";
+import {useGetActiveGameQuery} from "@/services/gameApi";
+import Image from 'next/image'
 
 const ANSWER_THEMES = [
   {
@@ -34,32 +37,47 @@ const ANSWER_THEMES = [
 
 export default function GamePage() {
   const {isConnected, findGame} = useGameSocket();
+  const {data: gameData} = useGetActiveGameQuery();
   const room = useSelector(selectGameRoom);
   const gameRoom = room?.gameRoom;
   const myId = useSelector(selectUserId);
   const router = useRouter();
   const isFinishedRound = gameRoom?.status === 'ROUND_FINISHED';
+  const isFinishedGame = gameRoom?.status === 'FINISHED';
 
   const iAmAnswered = useMemo(() => {
     return gameRoom?.players.find(p => p.id === myId)?.isAnswered ?? false;
   }, [gameRoom, myId]);
 
   useEffect(() => {
-    if (isConnected) {
+    if (isConnected && !gameRoom && (gameData?.status === 'CONNECTED' || gameData?.status === 'DISCONNECTED')
+    ) {
       findGame();
     }
-  }, [isConnected, findGame])
+  }, [isConnected, gameRoom, gameData?.status, findGame]);
 
   useEffect(() => {
-    if (!gameRoom && !isFinishedRound) {
-      router.push('/');
+    if (gameRoom && isFinishedGame && gameRoom?.gameId) {
+      router.push(`/game/${gameRoom.gameId}`);
     }
-  }, [gameRoom, isFinishedRound, router]);
+  }, [gameRoom, isFinishedGame, router]);
 
-  if (!gameRoom || isFinishedRound) {
+  if (!gameRoom) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Spinner/>
+      </div>
+    );
+  }
+
+  if (isFinishedGame) {
     return <div className="flex justify-center items-center min-h-screen">
       <Spinner/>
     </div>
+  }
+
+  if (isFinishedRound) {
+    return <RoundResults game={gameRoom}/>
   }
 
   return (
@@ -73,10 +91,25 @@ export default function GamePage() {
             className="px-4 py-1 bg-black/40 text-cyan-300 rounded-full text-xs font-bold uppercase tracking-widest border border-white/10">
             Round {gameRoom?.currentQNum} / {gameRoom?.qQuantity}
           </span>
+          <span
+            className="px-4 py-2 bg-white/10 border border-white/20 rounded-full
+            text-sm md:text-base font-semibold text-cyan-300
+            backdrop-blur-sm shadow-md tracking-wide">
+            Current topic: {gameRoom?.topic}
+          </span>
 
           <h1 className="text-3xl md:text-5xl font-black text-white drop-shadow-lg leading-tight">
             {gameRoom.currentQText}
           </h1>
+
+          <div className="relative w-full max-w-md mx-auto h-64">
+            <Image
+              src={gameRoom?.currentImageUrl}
+              alt={gameRoom?.currentQText}
+              fill
+              className="object-cover"
+            />
+          </div>
 
           <Countdown targetDate={gameRoom.roundEndTime} currentTime={gameRoom.currentTime}/>
         </div>
@@ -86,7 +119,7 @@ export default function GamePage() {
 
         <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 auto-rows-fr">
 
-          {gameRoom.currentAnswers.map((question, index) => {
+          {gameRoom.currentAnswers?.map((question, index) => {
             const theme = ANSWER_THEMES[index % ANSWER_THEMES.length];
 
             return (
@@ -189,7 +222,8 @@ const PlayerItem = ({name, score, status, isMe = false, isAnswer}: {
           ${isMe ? "bg-amber-500 text-black" : "bg-gray-700 text-gray-300"}
         `}>
           {name.charAt(0).toUpperCase()}
-          <span className={`absolute bottom-0 right-0 w-2 h-2 rounded ${status === 'CONNECTED' ? 'bg-emerald-400' : 'bg-red-500'}`}></span>
+          <span
+            className={`absolute bottom-0 right-0 w-2 h-2 rounded ${status === 'CONNECTED' ? 'bg-emerald-400' : 'bg-red-500'}`}></span>
         </div>
 
         <span className={`font-medium truncate ${isMe ? "font-bold" : ""}`} title={name}>

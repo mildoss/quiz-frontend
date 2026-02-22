@@ -18,6 +18,7 @@ export interface Player {
   status: string;
   score?: number;
   isAnswered?: boolean;
+  isCorrect?: boolean;
 }
 
 export interface Answer {
@@ -38,6 +39,9 @@ export interface GameRoom {
   currentTime: string;
   currentQId: number;
   answerId: number;
+  gameId: number;
+  topic: string;
+  currentImageUrl: string;
 }
 
 export interface RoomUpdate {

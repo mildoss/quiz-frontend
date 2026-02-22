@@ -5,7 +5,7 @@ import { Client, StompSubscription } from '@stomp/stompjs';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectToken } from '@/store/authSlice';
 import { setRoomData, setIsSearching, clearGame } from '@/store/gameSlice';
-import {router} from "next/dist/client";
+import {useRouter} from "next/navigation";
 
 interface SocketContextType {
   isConnected: boolean;
@@ -21,6 +21,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch();
   const stompClient = useRef<Client | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const router = useRouter();
   const roomSubscription = useRef<StompSubscription | null>(null);
   const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080';
 
@@ -31,10 +32,20 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
 
     roomSubscription.current = client.subscribe(topic, (roomMsg) => {
       const update = JSON.parse(roomMsg.body);
+
       if (update && !update.gameRoom) {
         dispatch(setRoomData({ gameRoom: update, gameRoomTopic: topic }));
       } else {
         dispatch(setRoomData(update));
+      }
+
+      // ОТПИСЫВАЕМСЯ ОТ КОМНАТЫ, ЕСЛИ ИГРА ЗАВЕРШЕНА
+      const status = update?.gameRoom?.status || update?.status;
+      if (status === 'FINISHED') {
+        if (roomSubscription.current) {
+          roomSubscription.current.unsubscribe();
+          roomSubscription.current = null;
+        }
       }
     });
   }, [dispatch]);
@@ -55,6 +66,13 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       client.subscribe('/user/queue/reply', (message) => {
         try {
           const data = JSON.parse(message.body);
+
+          // Игнорируем запоздалые сообщения о финише из очереди
+          const status = data?.gameRoom?.status || data?.status;
+          if (status === 'FINISHED') {
+            return;
+          }
+
           dispatch(setRoomData(data));
 
           if (data?.gameRoomTopic) {
@@ -102,7 +120,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       dispatch(clearGame());
       router.push('/');
     }
-  }, [isConnected, dispatch]);
+  }, [router, isConnected, dispatch]);
 
   const sendAnswer = ({qId, answerId, roomId} :{qId: number, answerId: number, roomId: number}) => {
     if (stompClient.current && isConnected) {

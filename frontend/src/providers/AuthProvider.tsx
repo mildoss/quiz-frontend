@@ -7,13 +7,14 @@ import { Spinner } from "@/components/ui/Spinner";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/store/store";
 import { logout, setCredentials, selectIsAuth } from "@/store/authSlice";
-import { setGameStatus } from "@/store/gameSlice";
+import { selectGameRoom, setGameStatus } from "@/store/gameSlice";
 import { useRouter, usePathname } from "next/navigation";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const pathname = usePathname();
+  const room = useSelector(selectGameRoom);
 
   const {
     data: userData,
@@ -24,7 +25,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAuth = useSelector(selectIsAuth);
 
   const {
-    data: gameData
+    data: gameData,
+    isLoading: isGameStatusLoading,
+    refetch: refetchGame
   } = useGetActiveGameQuery(undefined, {
     skip: !isAuth,
     pollingInterval: 0,
@@ -44,18 +47,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [userData, dispatch, authError]);
 
   useEffect(() => {
-    if (gameData) {
-      dispatch(setGameStatus(gameData.status));
-      if (gameData.status === 'DISCONNECTED' || gameData.status === 'CONNECTED') {
-        if (pathname !== '/game') {
+    const isSocketActive = room?.gameRoom?.status === 'ACTIVE';
+    const isGameFinished = room?.gameRoom?.status === 'FINISHED';
+
+    const effectiveStatus = isSocketActive ? 'CONNECTED' : gameData?.status;
+
+    if (effectiveStatus) {
+      dispatch(setGameStatus(effectiveStatus));
+
+      const isResultPage = pathname.startsWith('/game/') && pathname !== '/game';
+
+      if (effectiveStatus === 'DISCONNECTED' || effectiveStatus === 'CONNECTED') {
+        if (pathname !== '/game' && !isResultPage && !isGameFinished) {
           router.replace('/game');
+        }
+      } else {
+        if (pathname === '/game') {
+          router.replace('/');
         }
       }
     }
-  }, [gameData, pathname, router, dispatch]);
+  }, [gameData, room, pathname, router, dispatch]);
 
+  useEffect(() => {
+    if (isAuth) {
+      refetchGame();
+    }
+  }, [pathname, isAuth, refetchGame]);
 
-  if (isAuthLoading) {
+  if (isAuthLoading || (isAuth && isGameStatusLoading)) {
     return (
       <div className="flex-1 flex items-center justify-center h-screen flex-col gap-4">
         <Spinner />
