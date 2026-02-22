@@ -23,7 +23,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
   const router = useRouter();
   const roomSubscription = useRef<StompSubscription | null>(null);
-  const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080';
+  const WS_URL = process.env.NEXT_PUBLIC_WS_URL;
 
   const subscribeToRoomTopic = useCallback((client: Client, topic: string) => {
     if (roomSubscription.current) {
@@ -39,7 +39,6 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         dispatch(setRoomData(update));
       }
 
-      // ОТПИСЫВАЕМСЯ ОТ КОМНАТЫ, ЕСЛИ ИГРА ЗАВЕРШЕНА
       const status = update?.gameRoom?.status || update?.status;
       if (status === 'FINISHED') {
         if (roomSubscription.current) {
@@ -67,7 +66,6 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         try {
           const data = JSON.parse(message.body);
 
-          // Игнорируем запоздалые сообщения о финише из очереди
           const status = data?.gameRoom?.status || data?.status;
           if (status === 'FINISHED') {
             return;

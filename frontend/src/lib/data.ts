@@ -53,10 +53,11 @@ export const getGamesInfo = cache(async (gameId: number) => {
   try {
     const { rows } = await pool.query<GameInfoResponse>(
       `SELECT gp.game_id, gp.user_id, gp.score, gp.status, ui.username, ui.user_id
-        FROM games_players gp
-        JOIN users_info ui ON gp.user_id = ui.user_id
-        WHERE gp.game_id = $1
-        ORDER BY gp.score DESC`,
+       FROM games_players gp
+                JOIN users_info ui ON gp.user_id = ui.user_id
+       WHERE gp.game_id = $1
+       ORDER BY gp.status DESC,
+                gp.score DESC;`,
       [gameId]
     );
     return rows;
