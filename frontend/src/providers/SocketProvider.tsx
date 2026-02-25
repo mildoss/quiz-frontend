@@ -9,7 +9,7 @@ import {useRouter} from "next/navigation";
 
 interface SocketContextType {
   isConnected: boolean;
-  findGame: () => void;
+  findGame: (quantity: number, topic: string) => void;
   leaveQueue: (roomId: number) => void;
   sendAnswer: (args: { qId: number; answerId: number; roomId: number }) => void;
 }
@@ -97,10 +97,10 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [token, dispatch, subscribeToRoomTopic, WS_URL]);
 
-  const findGame = useCallback(() => {
+  const findGame = useCallback((quantity: number, topic: string) => {
     if (stompClient.current && isConnected) {
       dispatch(setIsSearching(true));
-      stompClient.current.publish({ destination: '/app/join-game_room' });
+      stompClient.current.publish({ destination: `/app/join-game_room/${quantity}/${topic}` });
     }
   }, [isConnected, dispatch]);
 

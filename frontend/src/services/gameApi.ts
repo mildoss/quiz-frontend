@@ -15,8 +15,15 @@ export const gameApi = baseApi.injectEndpoints({
         method: 'GET',
       }),
     }),
+    getTopics: builder.query<string[], void>({
+      query: () => ({
+        url: '/game/topics',
+        method: 'GET'
+      })
+    })
   })
 })
 
-export const {useGetGameInfoQuery, useGetActiveGameQuery} = gameApi;
+export const {useGetGameInfoQuery, useGetActiveGameQuery, useGetTopicsQuery} = gameApi;
+
 
