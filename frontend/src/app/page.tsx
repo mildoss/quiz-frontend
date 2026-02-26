@@ -9,6 +9,7 @@ import {GameLobby} from "@/components/GameLobby";
 import {useGameSocket} from "@/providers/SocketProvider";
 import {AppDispatch} from "@/store/store";
 import {useGetTopicsQuery} from "@/services/gameApi";
+import {GameStatus} from "@/types/game";
 
 export default function Home() {
   const router = useRouter();
@@ -23,12 +24,11 @@ export default function Home() {
   const [selectedTopic, setSelectedTopic] = useState("");
 
   useEffect(() => {
-    if (room?.gameRoom?.status === 'ACTIVE') {
+    if (room?.gameRoom?.status === GameStatus.ACTIVE) {
       router.push('/game');
     }
 
-
-    if (room?.gameRoom?.status === 'FINISHED') {
+    if (room?.gameRoom?.status === GameStatus.FINISHED) {
       dispatch(clearGame());
       dispatch(setGameStatus('NOT_IN_GAME'));
     }
@@ -44,9 +44,6 @@ export default function Home() {
 
   return (
     <div className="min-h-[calc(100vh-15vh)] flex flex-col justify-center items-center p-4">
-
-
-
       {!room && !isSearching && (
         <>
           <div className="sm:flex-row flex flex-col gap-6 mb-10">

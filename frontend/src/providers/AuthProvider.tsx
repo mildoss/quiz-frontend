@@ -9,6 +9,7 @@ import { AppDispatch } from "@/store/store";
 import { logout, setCredentials, selectIsAuth } from "@/store/authSlice";
 import { selectGameRoom, setGameStatus } from "@/store/gameSlice";
 import { useRouter, usePathname } from "next/navigation";
+import {GameStatus} from "@/types/game";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -47,8 +48,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [userData, dispatch, authError]);
 
   useEffect(() => {
-    const isSocketActive = room?.gameRoom?.status === 'ACTIVE';
-    const isGameFinished = room?.gameRoom?.status === 'FINISHED';
+    const isSocketActive = room?.gameRoom?.status === GameStatus.ACTIVE;
+    const isGameFinished = room?.gameRoom?.status === GameStatus.FINISHED;
 
     const effectiveStatus = isSocketActive ? 'CONNECTED' : gameData?.status;
 

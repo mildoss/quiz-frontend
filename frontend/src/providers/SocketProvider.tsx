@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { selectToken } from '@/store/authSlice';
 import { setRoomData, setIsSearching, clearGame } from '@/store/gameSlice';
 import {useRouter} from "next/navigation";
+import {GameStatus} from "@/types/game";
 
 interface SocketContextType {
   isConnected: boolean;
@@ -40,7 +41,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const status = update?.gameRoom?.status || update?.status;
-      if (status === 'FINISHED') {
+      if (status === GameStatus.FINISHED) {
         if (roomSubscription.current) {
           roomSubscription.current.unsubscribe();
           roomSubscription.current = null;
@@ -67,7 +68,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
           const data = JSON.parse(message.body);
 
           const status = data?.gameRoom?.status || data?.status;
-          if (status === 'FINISHED') {
+          if (status === GameStatus.FINISHED) {
             return;
           }
 
