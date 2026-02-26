@@ -15,7 +15,7 @@ export const PlayersSidebar = ({ players, myId }: { players: Player[], myId: num
             score={player.score ?? 0}
             isMe={myId === player.id}
             status={player.status}
-            isAnswer={player.isAnswered ?? false}
+            variant={player.isAnswered ? 'answered' : 'default'}
           />
         ))}
       </ul>
