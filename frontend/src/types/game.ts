@@ -10,7 +10,18 @@ export interface GameInfoResponse extends Game {
   user_id: number;
 }
 
-export type GameStatus = 'WAITING' | 'COUNTDOWN' | 'ACTIVE' | 'FINISHED' | 'ROUND_FINISHED';
+export enum GameStatus {
+  WAITING = 'WAITING',
+  COUNTDOWN = 'COUNTDOWN',
+  ACTIVE = 'ACTIVE',
+  FINISHED = 'FINISHED',
+  ROUND_FINISHED = 'ROUND_FINISHED'
+}
+
+export enum PlayerStatus {
+  CONNECTED = 'CONNECTED',
+  DISCONNECTED = 'DISCONNECTED'
+}
 
 export interface Player {
   id: number;
