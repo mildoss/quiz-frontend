@@ -3,14 +3,17 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from 'react';
 import { Client, StompSubscription } from '@stomp/stompjs';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectToken } from '@/store/authSlice';
-import { setRoomData, setIsSearching, clearGame } from '@/store/gameSlice';
-import {useRouter} from "next/navigation";
-import {GameStatus} from "@/types/game";
+import {selectToken, selectUserId} from '@/store/authSlice';
+import {setRoomData, setIsSearching, clearGame, selectGameRoom} from '@/store/gameSlice';
+import {usePathname, useRouter} from "next/navigation";
+import {GameStatus, Player} from "@/types/game";
+import {gameApi} from "@/services/gameApi";
+import {AppDispatch} from "@/store/store";
 
 interface SocketContextType {
   isConnected: boolean;
   findGame: (quantity: number, topic: string) => void;
+  reconnectInGame: () => void;
   leaveQueue: (roomId: number) => void;
   sendAnswer: (args: { qId: number; answerId: number; roomId: number }) => void;
 }
@@ -19,12 +22,16 @@ const SocketContext = createContext<SocketContextType | null>(null);
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const token = useSelector(selectToken);
-  const dispatch = useDispatch();
+  const room = useSelector(selectGameRoom);
+  const dispatch = useDispatch<AppDispatch>();
   const stompClient = useRef<Client | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const router = useRouter();
   const roomSubscription = useRef<StompSubscription | null>(null);
   const WS_URL = process.env.NEXT_PUBLIC_WS_URL;
+  const myId = useSelector(selectUserId);
+  const isQuittingRef = useRef(false);
+  const pathname = usePathname();
 
   const subscribeToRoomTopic = useCallback((client: Client, topic: string) => {
     if (roomSubscription.current) {
@@ -34,21 +41,51 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     roomSubscription.current = client.subscribe(topic, (roomMsg) => {
       const update = JSON.parse(roomMsg.body);
 
-      if (update && !update.gameRoom) {
-        dispatch(setRoomData({ gameRoom: update, gameRoomTopic: topic }));
-      } else {
-        dispatch(setRoomData(update));
-      }
+      const roomUpdate = update.gameRoom || update;
+      const status = roomUpdate?.status;
 
-      const status = update?.gameRoom?.status || update?.status;
       if (status === GameStatus.FINISHED) {
+        isQuittingRef.current = false;
+
+        if (update && !update.gameRoom) {
+          dispatch(setRoomData({ gameRoom: update, gameRoomTopic: topic }));
+        } else {
+          dispatch(setRoomData(update));
+        }
+
         if (roomSubscription.current) {
           roomSubscription.current.unsubscribe();
           roomSubscription.current = null;
         }
+      } else {
+        const myPlayer = roomUpdate?.players?.find((p: Player) => p.id === myId);
+        const amIDisconnected = !myPlayer || myPlayer.status === 'DISCONNECTED';
+
+        if (amIDisconnected && isQuittingRef.current) {
+          isQuittingRef.current = false;
+
+          if (roomSubscription.current) {
+            roomSubscription.current.unsubscribe();
+            roomSubscription.current = null;
+          }
+
+          dispatch(clearGame());
+
+          dispatch(gameApi.util.updateQueryData('getActiveGame', undefined, (draft) => {
+            draft.status = 'NOT_IN_GAME';
+          }));
+
+          router.push('/');
+        } else {
+          if (update && !update.gameRoom) {
+            dispatch(setRoomData({ gameRoom: update, gameRoomTopic: topic }));
+          } else {
+            dispatch(setRoomData(update));
+          }
+        }
       }
     });
-  }, [dispatch]);
+  }, [dispatch, myId, router]);
 
   useEffect(() => {
     if (!token) return;
@@ -105,30 +142,59 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isConnected, dispatch]);
 
+  const reconnectInGame = useCallback(() => {
+    if (stompClient.current && isConnected) {
+      dispatch(setIsSearching(true));
+      stompClient.current.publish({ destination: `/app/reconnect` });
+    }
+  }, [isConnected, dispatch])
+
   const leaveQueue = useCallback((roomId: number) => {
     if (stompClient.current && isConnected) {
-      if (roomSubscription.current) {
-        roomSubscription.current.unsubscribe();
-        roomSubscription.current = null;
-      }
+      isQuittingRef.current = true;
 
       stompClient.current.publish({
         destination: `/app/leave-game_room/${roomId}`
       });
 
+      if (
+        room?.gameRoom?.status === GameStatus.ACTIVE ||
+        room?.gameRoom?.status === GameStatus.ROUND_FINISHED
+      ) {
+        return;
+      }
+
+      isQuittingRef.current = false;
+      if (roomSubscription.current) {
+        roomSubscription.current.unsubscribe();
+        roomSubscription.current = null;
+      }
+
       dispatch(clearGame());
+      dispatch(gameApi.util.updateQueryData('getActiveGame', undefined, (draft) => {
+        draft.status = 'NOT_IN_GAME';
+      }));
       router.push('/');
     }
-  }, [router, isConnected, dispatch]);
+  }, [router, isConnected, dispatch, room?.gameRoom?.status]);
 
-  const sendAnswer = ({qId, answerId, roomId} :{qId: number, answerId: number, roomId: number}) => {
+  const sendAnswer = useCallback(({qId, answerId, roomId} :{qId: number, answerId: number, roomId: number}) => {
     if (stompClient.current && isConnected) {
       stompClient.current.publish({ destination: `/app/answer/${qId}/${answerId}/${roomId}`})
     }
-  }
+  }, [isConnected]);
+
+  useEffect(() => {
+    if (pathname !== '/' && room?.gameRoom) {
+      const status = room.gameRoom.status;
+      if (status === GameStatus.WAITING || status === GameStatus.COUNTDOWN) {
+        leaveQueue(room.gameRoom.id);
+      }
+    }
+  }, [pathname, room?.gameRoom?.status, room?.gameRoom?.id, leaveQueue]);
 
   return (
-    <SocketContext.Provider value={{ isConnected, findGame, leaveQueue, sendAnswer }}>
+    <SocketContext.Provider value={{ isConnected, findGame, reconnectInGame, leaveQueue, sendAnswer }}>
       {children}
     </SocketContext.Provider>
   );

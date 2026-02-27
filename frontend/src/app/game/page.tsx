@@ -15,7 +15,7 @@ import { AnswerGrid } from "@/components/AnswerGrid";
 import { PlayersSidebar } from "@/components/PlayerSidebar";
 
 export default function GamePage() {
-  const { isConnected, findGame } = useGameSocket();
+  const { isConnected, reconnectInGame } = useGameSocket();
   const { data: gameData } = useGetActiveGameQuery();
   const room = useSelector(selectGameRoom);
   const gameRoom = room?.gameRoom;
@@ -30,9 +30,9 @@ export default function GamePage() {
 
   useEffect(() => {
     if (isConnected && !gameRoom && (gameData?.status === 'CONNECTED' || gameData?.status === 'DISCONNECTED')) {
-      findGame();
+      reconnectInGame();
     }
-  }, [isConnected, gameRoom, gameData?.status, findGame]);
+  }, [isConnected, gameRoom, gameData?.status, reconnectInGame]);
 
   useEffect(() => {
     if (gameRoom && isFinishedGame && gameRoom?.gameId) {
