@@ -1,7 +1,7 @@
 interface StatsCardProps {
   title: string;
   subtitle: string;
-  quantity: number;
+  quantity: number | string;
 }
 
 export const StatsCard = ({title, subtitle, quantity}: StatsCardProps) => {
