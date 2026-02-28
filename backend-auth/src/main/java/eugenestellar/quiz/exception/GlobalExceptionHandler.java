@@ -82,6 +82,13 @@ public class GlobalExceptionHandler {
 
   }
 
+  @ExceptionHandler(ProfileCreationException.class)
+  public ResponseEntity<Map<String, String>> handleProfileCreationException(ProfileCreationException ex) {
+    return ResponseEntity
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body(Map.of("error", "Profile creation failed."));
+  }
+
   @ExceptionHandler(Exception.class)
   public ResponseEntity<Map<String, String>> handleAllUncaughtException(Exception ex) {
     log.error("Unexpected error: ", ex);

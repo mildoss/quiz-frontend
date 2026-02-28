@@ -19,7 +19,7 @@ public class Game {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private long id;
 
-  @Column(name = "date", insertable = false, updatable = false, nullable = false) // is current by default
+  @Column(name = "date", insertable = false, updatable = false, nullable = false) // is current by default in db
   private Date date;
 
   @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)

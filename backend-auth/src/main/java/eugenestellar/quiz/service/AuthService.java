@@ -1,10 +1,9 @@
 package eugenestellar.quiz.service;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import eugenestellar.quiz.exception.ExpiredRefreshTokenException;
-import eugenestellar.quiz.exception.NotFoundUserOrIncorrectPasswordException;
-import eugenestellar.quiz.exception.UserNotFoundForTokenException;
-import eugenestellar.quiz.exception.UsernameAlreadyExistException;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import eugenestellar.quiz.exception.*;
+import eugenestellar.quiz.model.Role;
 import eugenestellar.quiz.model.dto.AuthUserDto;
 import eugenestellar.quiz.model.dto.ResponseTokenAndInfoDto;
 import eugenestellar.quiz.model.entity.User;
@@ -20,7 +19,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class AuthService {
@@ -55,22 +56,24 @@ public class AuthService {
     userForDb.setPassword(passwordEncoder.encode(userDto.getPassword()));
     userForDb.setUsername(username);
     User savedUser = userRepo.save(userForDb);
+    String tokenForGameService = jwtUtil.generateServiceToken(List.of(Role.ROLE_AUTH_SERVICE.name()));
 
       try {
         webClient.post()
             .uri(gameServiceUrl + "/user_info/" + savedUser.getId())
+            .header("Authorization", "Bearer " + tokenForGameService)
             .bodyValue(Map.of("username", savedUser.getUsername()))
             .retrieve()
             .toBodilessEntity()
             .block();
 
-        String token = jwtUtil.generateToken(username, true);
+        String token = jwtUtil.generateToken(savedUser.getId(), username, true, List.of(Role.ROLE_USER.name()));
         return new ResponseTokenAndInfoDto(token, savedUser.getId(), username);
       } catch (WebClientResponseException e) {
         // if game-backend service returned 4xx or 5xx
         userRepo.delete(savedUser);
         log.error("Game Service error: Status {}, Body {}", e.getStatusCode(), e.getResponseBodyAsString());
-        throw new RuntimeException("Profile creation failed. Try again later. Status: " + e.getStatusCode());
+        throw new ProfileCreationException("Profile creation failed. Try again later. Status: " + e.getStatusCode());
       } catch (Exception e) {
         // if game-backend service is unreachable(Connection refused)
         userRepo.delete(savedUser);
@@ -81,7 +84,7 @@ public class AuthService {
 
   public ResponseCookie setRefreshTokenInCookie(String username) {
 
-    return ResponseCookie.from("refresh-token", jwtUtil.generateToken(username, false))
+    return ResponseCookie.from("refresh-token", jwtUtil.generateToken(null, username, false, null))
         .httpOnly(true)
         .secure(true)
         .sameSite("None") // for cross-domain access
@@ -94,8 +97,7 @@ public class AuthService {
 
     String username = userDto.getUsername();
 
-    var userFromDbOptional = userRepo.findByUsername(username);
-
+    Optional<User> userFromDbOptional = userRepo.findByUsername(username);
 
     if (userFromDbOptional.isEmpty())
       throw new NotFoundUserOrIncorrectPasswordException("There's no user with a name " + username);
@@ -105,7 +107,7 @@ public class AuthService {
     if (!passwordEncoder.matches(userDto.getPassword(), userFromDb.getPassword()))
       throw new NotFoundUserOrIncorrectPasswordException("The password is incorrect");
 
-    String token = jwtUtil.generateToken(username, true);
+    String token = jwtUtil.generateToken(userFromDb.getId(), username, true, List.of(Role.ROLE_USER.name()));
 
     return new ResponseTokenAndInfoDto(token, userFromDb.getId(), username);
 
@@ -113,11 +115,13 @@ public class AuthService {
 
   public ResponseTokenAndInfoDto getNewAccessToken(String refreshToken) {
     try {
-      String username = jwtUtil.validateRefreshTokenAndRetrieveClaim(refreshToken);
-      String accessToken = jwtUtil.generateToken(username, true);
+      DecodedJWT jwt = jwtUtil.validateRefreshToken(refreshToken);
+      String username = jwt.getSubject();
 
       User user = userRepo.findByUsername(username)
           .orElseThrow(() -> new UserNotFoundForTokenException("User not found with username: " + username));
+
+      String accessToken = jwtUtil.generateToken(user.getId(), username, true, List.of(Role.ROLE_USER.name()));
 
       return new ResponseTokenAndInfoDto(accessToken, user.getId(), username);
 

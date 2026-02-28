@@ -10,19 +10,18 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 
 @Configuration
-public class SecurityConfig {
+public class CustomSecurityConfig {
 
   private final JwtFilter jwtFilter;
 
   @Value("${FRONTEND_URL}")
   private String frontendUrl;
 
-  public SecurityConfig(JwtFilter jwtFilter) {
+  public CustomSecurityConfig(JwtFilter jwtFilter) {
     this.jwtFilter = jwtFilter;
   }
 

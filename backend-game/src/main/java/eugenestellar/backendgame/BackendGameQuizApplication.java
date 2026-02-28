@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class BackendGameApplication {
+public class BackendGameQuizApplication {
 
   public static void main(String[] args) {
-    SpringApplication.run(BackendGameApplication.class, args);
+    SpringApplication.run(BackendGameQuizApplication.class, args);
   }
 
 }
